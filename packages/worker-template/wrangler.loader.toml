@@ -1,0 +1,20 @@
+# Orchestrator Worker using Cloudflare Worker Loader (dynamic isolates).
+# Run with: wrangler dev --config wrangler.loader.toml
+# Deploy with: wrangler deploy --config wrangler.loader.toml
+#
+# Worker Loader is in closed beta on Cloudflare:
+# https://developers.cloudflare.com/workers/runtime-apis/bindings/worker-loader/
+# Sign up: https://forms.gle/MoeDxE9wNiqdf8ri9
+
+name = "orcratration-loader"
+main = "src/loader.ts"
+compatibility_date = "2024-11-01"
+
+# Dynamic Worker Loader binding — loads user scripts in isolates at runtime
+[[worker_loaders]]
+binding = "LOADER"
+
+# Optional: KV for session store in dynamic workers
+# [[kv_namespaces]]
+# binding = "KV"
+# id = "<YOUR_KV_NAMESPACE_ID>"

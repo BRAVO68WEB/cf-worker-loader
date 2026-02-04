@@ -1,0 +1,26 @@
+{
+  "name": "orcratration",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare-Workers powered Typeform alternative — dynamic multi-page forms with script orchestration",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "dev:backend": "dotenv -e .env -- pnpm --filter backend dev",
+    "dev:frontend": "dotenv -e .env -- pnpm --filter frontend dev",
+    "dev:worker": "dotenv -e .env -- pnpm --filter worker-template dev",
+    "wrangler": "wrangler"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.4.2",
+    "turbo": "^2.3.0",
+    "wrangler": "^4.62.0"
+  },
+  "packageManager": "pnpm@10.1.0",
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,11 @@
+name = "orcratration-script-worker"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# KV namespace for script store (create via wrangler kv:namespace create "ORCR_STORE")
+# [[kv_namespaces]]
+# binding = "KV"
+# id = "<YOUR_KV_NAMESPACE_ID>"
+
+[vars]
+# Optional: WORKER_METADATA = "{}"
