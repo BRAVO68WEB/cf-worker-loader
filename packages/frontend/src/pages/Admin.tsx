@@ -123,11 +123,11 @@ export default function Admin() {
               onRuntime={applyRuntime}
             />
             <ScriptRows
-              key={form._id}
+              key={`scripts-${form._id}`}
               steps={scriptSteps(form.flow)}
               onGate={(next) => setGate({ formId: form._id, ...next })}
             />
-            <SessionPanel key={form._id} formId={form._id} slug={form.slug} />
+            <SessionPanel key={`sessions-${form._id}`} formId={form._id} slug={form.slug} />
           </>
         ) : null}
       </div>
