@@ -1,38 +1,30 @@
 # Orcratration — Infrastructure notes
 
-## Architecture overview
+## Architecture
 
-- **Frontend (React + Vite):** Form builder, script editor (Monaco), deploy button, admin UI. Talks to Backend API.
-- **Backend (Node + Hono):** Persists forms/scripts/deployments in MongoDB, orchestrates deploy (calls Deployer), auth, session/session state API.
-- **Deployer:** Validates and bundles user script with worker-template (esbuild), uploads Worker via Cloudflare API, creates route. Used by Backend.
-- **Worker (Cloudflare):** One Worker per script (or per form-script bundle). Receives POST with `session_id`, `formId`, `event`, `formData`; runs user script with `ctx`/`hook`; uses KV (or Durable Object) for store.
+- **Public player (`packages/form`):** Next.js. One field per screen. Calls `POST /api/run` and `routeScriptResult`.
+- **Creator (`packages/frontend`):** Vite. Deploy publishes each flow script to the platform. It does not change `Form.runtime` and it does not call Cloudflare.
+- **Admin (`/admin`):** Vite night desk. Binds a script to Cloudflare (`loader` or `worker`) and switches `Form.runtime`. Lists platform sessions from `session_stores`. Does not call `GET /api/deployments`. The player link uses `VITE_PLAYER_ORIGIN`, default `http://localhost:4000`.
+- **Backend:** Hono and MongoDB. Compiles a script, stores a revision, and runs the active binding.
+- **Deployer:** esbuild. Author ESM becomes an ESM bundle (Cloudflare) and a CJS bundle (platform `node:vm`).
+- **Worker template:** Optional Cloudflare target. Loader mode or one worker per script. Both return `RunResult`.
 
-## Data stores
+## Data
 
-- **MongoDB:** Canonical store for form definitions, scripts, deployments, users, audit.
-- **Cloudflare KV / Durable Object:** Runtime store for script `ctx.store` (session-scoped; key prefix `ORCR_SESSION::{session_id}::`).
+- **MongoDB:** forms, scripts, revisions, bindings, users, and platform session stores (`session_stores`).
+- **Old `deployments` collection:** frozen. `GET /api/deployments` still reads it. New publishes do not write it.
+- **Cloudflare KV:** only for a Cloudflare binding published while `KV_NAMESPACE_ID` is set. Keys use `ORCR_SESSION::<session_id>::`.
 
-## Deployment pipeline (target)
+## Publish and run
 
-1. User clicks Deploy in UI → `POST /api/forms/:id/deploy`.
-2. Backend validates, creates Deployment record (status `queued`), calls Deployer.
-3. Deployer: for each script, bundle with worker-template, upload via Cloudflare API, create/update route.
-4. Backend updates Deployment status to `active` (or `failed`), returns result to frontend.
+1. `POST /api/scripts/:id/publish` compiles the draft. Failure is `422 publish_failed` and leaves the previous platform binding active.
+2. Success inserts a revision and upserts the platform binding (`storeDurable: true`).
+3. `POST /api/run` runs that one script step. The response is one `RunResult`.
+4. `POST /api/scripts/:id/bindings/cloudflare` adds the optional Cloudflare binding.
+5. `PATCH /api/forms/:id/runtime` selects which binding is live. `platform` is the default.
 
-## Security
+There is no fetch allow-list, no secrets manager, and no Durable Objects in this slice. `ctx.env` is `script.env` only.
 
-- Script sandbox: no Node globals; optional fetch allow-list; no `eval` with user scope; lint/scan for forbidden tokens.
-- Secrets: Cloudflare Worker env bindings; do not expose plain text to script authors.
-- Rate limiting on Worker and Backend endpoints (per-form / per-account).
+## Removed routes
 
-## Observability
-
-- Cloudflare Logs for Workers; optional forward to Sentry/Datadog.
-- Backend: store execution metadata in Mongo (scriptId, session_id, success/fail, latency).
-- Admin dashboard: deployment list, script execution counts, error rates.
-
-## Scaling
-
-- Prefer one Worker per script for isolation; optionally bundle multiple scripts per form to reduce cross-worker calls.
-- Durable Object sharding by `session_id` for per-session state.
-- MongoDB and Cloudflare scale independently; consider connection pooling and Worker CPU/time limits.
+`POST /api/submit`, `POST /api/forms/:id/deploy`, and `POST /api/scripts/:id/deploy` are gone.

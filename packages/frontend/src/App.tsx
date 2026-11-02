@@ -49,6 +49,7 @@ export default function App() {
           <Route path="scripts/new" element={<ScriptNew />} />
           <Route path="scripts/:id" element={<ScriptDetail />} />
           <Route path="admin" element={<Admin />} />
+          <Route path="admin/:formId" element={<Admin />} />
         </Route>
       </Routes>
     </BrowserRouter>

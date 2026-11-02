@@ -1020,3 +1020,27 @@ h1 {
 .btn-secondary:hover {
   background: #e2e8f0;
 }
+
+.layout-night {
+  background: #0c0c0c;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.layout-night nav {
+  background: #0c0c0c;
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.layout-night nav a {
+  color: #fff;
+}
+
+.layout-night main {
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
