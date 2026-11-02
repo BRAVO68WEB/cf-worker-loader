@@ -5,6 +5,7 @@ import "../admin/admin.css";
 import { FormList } from "../admin/FormList";
 import { RuntimeSwitch } from "../admin/RuntimeSwitch";
 import { ScriptRows } from "../admin/ScriptRows";
+import { SessionPanel } from "../admin/SessionPanel";
 import { isAbortError, isMissingForm } from "../admin/apiErrorMessage";
 import { playerHref, runtimeLabel, scriptSteps, sortForms } from "../admin/desk";
 
@@ -126,6 +127,7 @@ export default function Admin() {
               steps={scriptSteps(form.flow)}
               onGate={(next) => setGate({ formId: form._id, ...next })}
             />
+            <SessionPanel key={form._id} formId={form._id} slug={form.slug} />
           </>
         ) : null}
       </div>
