@@ -94,12 +94,12 @@
   color: #ffb4a6;
 }
 
-.bind-coral {
+.script-row button.bind-coral {
   color: #ff5a36;
   border-color: transparent;
 }
 
-.bind-quiet {
+.script-row button.bind-quiet {
   color: rgba(255, 255, 255, 0.45);
 }
 
