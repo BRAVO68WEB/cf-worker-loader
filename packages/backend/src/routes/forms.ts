@@ -1,12 +1,25 @@
 import { Hono } from "hono";
 import Form from "../models/form.js";
 import FormVersion from "../models/formVersion.js";
+import SessionStoreModel from "../models/sessionStore.js";
+import { presentSessionDetail, presentSessionList, type SessionListDoc } from "../runtime/session-list.js";
 import type { FormScriptRef } from "@orcratration/shared";
 
 type DeployResponse = Awaited<ReturnType<typeof import("../lib/deploy.js").deployFormAndPersist>>;
 type DeployFn = (opts: { formId: string; scripts: FormScriptRef[]; routes?: { path: string }[] }) => Promise<DeployResponse>;
 
 const forms = new Hono<{ Variables: { deploy: DeployFn } }>();
+
+async function loadForm(id: string): Promise<{ _id: unknown } | null> {
+  try {
+    return (await Form.findById(id).lean()) as { _id: unknown } | null;
+  } catch (err) {
+    if (err && typeof err === "object" && "name" in err && (err as { name?: string }).name === "CastError") {
+      return null;
+    }
+    throw err;
+  }
+}
 
 forms.post("/", async (c) => {
   const body = await c.req.json();
@@ -23,6 +36,27 @@ forms.get("/by-slug/:slug", async (c) => {
   const doc = await Form.findOne({ slug: c.req.param("slug") }).lean();
   if (!doc) return c.json({ error: "not_found" }, 404);
   return c.json(doc);
+});
+
+forms.get("/:id/sessions", async (c) => {
+  const form = await loadForm(c.req.param("id"));
+  if (!form) return c.json({ error: "form_not_found" }, 404);
+  const docs = (await SessionStoreModel.find({ formId: form._id })
+    .sort({ updatedAt: -1 })
+    .limit(20)
+    .lean()) as SessionListDoc[];
+  return c.json(presentSessionList(docs));
+});
+
+forms.get("/:id/sessions/:sessionId", async (c) => {
+  const form = await loadForm(c.req.param("id"));
+  if (!form) return c.json({ error: "form_not_found" }, 404);
+  const doc = (await SessionStoreModel.findOne({
+    sessionId: c.req.param("sessionId"),
+    formId: form._id,
+  }).lean()) as SessionListDoc | null;
+  if (!doc) return c.json({ error: "session_not_found" }, 404);
+  return c.json(presentSessionDetail(doc));
 });
 
 forms.get("/:id", async (c) => {
