@@ -3,8 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import "../admin/admin.css";
 import { FormList } from "../admin/FormList";
+import { RuntimeSwitch } from "../admin/RuntimeSwitch";
+import { ScriptRows } from "../admin/ScriptRows";
 import { isAbortError, isMissingForm } from "../admin/apiErrorMessage";
-import { playerHref, runtimeLabel, sortForms } from "../admin/desk";
+import { playerHref, runtimeLabel, scriptSteps, sortForms } from "../admin/desk";
 
 interface FormListItem {
   _id: string;
@@ -29,6 +31,11 @@ export default function Admin() {
   const [formsError, setFormsError] = useState<string | null>(null);
   const [form, setForm] = useState<DeskForm | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [gate, setGate] = useState<{ formId: string; pending: boolean; labels: string[] }>({
+    formId: "",
+    pending: true,
+    labels: [],
+  });
 
   useEffect(() => {
     const id = "orcratration-outfit";
@@ -78,6 +85,11 @@ export default function Admin() {
     return () => controller.abort();
   }, [formId]);
 
+  function applyRuntime(runtime: "platform" | "cloudflare") {
+    setForm((current) => (current ? { ...current, runtime } : current));
+    setForms((current) => current?.map((row) => (row._id === formId ? { ...row, runtime } : row)) ?? current);
+  }
+
   return (
     <div className="night-desk">
       {forms && forms.length > 0 ? <FormList forms={forms} selectedId={formId} /> : <div className="form-list" />}
@@ -92,15 +104,29 @@ export default function Admin() {
         {formId && !form && !formError ? <p>Loading…</p> : null}
         {formError ? <p>{formError}</p> : null}
         {form ? (
-          <header className="desk-header">
-            <div>
-              <h1>{form.name}</h1>
-              <p className="muted">{runtimeLabel(form.runtime)}</p>
-            </div>
-            <a href={playerHref(form.slug, playerOrigin())} target="_blank" rel="noreferrer">
-              Open player
-            </a>
-          </header>
+          <>
+            <header className="desk-header">
+              <div>
+                <h1>{form.name}</h1>
+                <p className="muted">{runtimeLabel(form.runtime)}</p>
+              </div>
+              <a href={playerHref(form.slug, playerOrigin())} target="_blank" rel="noreferrer">
+                Open player
+              </a>
+            </header>
+            <RuntimeSwitch
+              formId={form._id}
+              runtime={form.runtime}
+              pending={gate.formId === form._id ? gate.pending : true}
+              labels={gate.formId === form._id ? gate.labels : []}
+              onRuntime={applyRuntime}
+            />
+            <ScriptRows
+              key={form._id}
+              steps={scriptSteps(form.flow)}
+              onGate={(next) => setGate({ formId: form._id, ...next })}
+            />
+          </>
         ) : null}
       </div>
     </div>
