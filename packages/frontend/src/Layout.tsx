@@ -1,8 +1,10 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 
 export default function Layout() {
+  const { pathname } = useLocation();
+  const night = pathname === "/admin" || pathname.startsWith("/admin/");
   return (
-    <div className="layout">
+    <div className={night ? "layout layout-night" : "layout"}>
       <nav>
         <Link to="/">Orcratration</Link>
         <Link to="/forms">Forms</Link>
